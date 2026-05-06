@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model certificates {
+  id              String    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id         String?   @db.VarChar(36)
+  name            String    @db.VarChar(255)
+  organization    String?   @db.VarChar(150)
+  issue_date      DateTime? @db.Date
+  expiration_date DateTime? @db.Date
+  credential_id   String?   @db.VarChar(100)
+  credential_url  String?   @db.VarChar(255)
+  image_url       String?   @db.VarChar(255)
+  users           users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "certificates_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model experiences {
+  id           String    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id      String?   @db.VarChar(36)
+  company_name String    @db.VarChar(150)
+  position     String    @db.VarChar(100)
+  start_date   DateTime  @db.Date
+  end_date     DateTime? @db.Date
+  description  String?   @db.Text
+  users        users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "experiences_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model project_images {
+  id            String    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  project_id    String?   @db.VarChar(36)
+  image_url     String    @db.VarChar(255)
+  display_order Int?      @default(0)
+  projects      projects? @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "project_images_ibfk_1")
+
+  @@index([project_id], map: "project_id")
+}
+
+model project_tech_stack {
+  project_id String     @db.VarChar(36)
+  tech_id    String     @db.VarChar(36)
+  projects   projects   @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "project_tech_stack_ibfk_1")
+  tech_stack tech_stack @relation(fields: [tech_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "project_tech_stack_ibfk_2")
+
+  @@id([project_id, tech_id])
+  @@index([tech_id], map: "tech_id")
+}
+
+model projects {
+  id                 String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id            String?              @db.VarChar(36)
+  title              String               @db.VarChar(150)
+  description        String?              @db.Text
+  thumbnail          String?              @db.VarChar(255)
+  demo_url           String?              @db.VarChar(255)
+  github_url         String?              @db.VarChar(255)
+  order_index        Int?                 @default(0)
+  created_at         DateTime?            @default(now()) @db.Timestamp(0)
+  is_active          Boolean?             @default(true)
+  project_images     project_images[]
+  project_tech_stack project_tech_stack[]
+  users              users?               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "projects_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model skills {
+  id       String  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  user_id  String? @db.VarChar(36)
+  name     String  @db.VarChar(50)
+  level    Int?    @default(100)
+  category String? @db.VarChar(30)
+  users    users?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "skills_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model tech_stack {
+  id                 String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name               String               @unique(map: "name") @db.VarChar(50)
+  icon_url           String?              @db.VarChar(255)
+  project_tech_stack project_tech_stack[]
+}
+
+model users {
+  id           String         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  username     String         @db.VarChar(20)
+  email        String         @db.VarChar(100)
+  pass         String         @db.VarChar(100)
+  major        users_major
+  created_at   DateTime?      @default(now()) @db.Timestamp(0)
+  certificates certificates[]
+  experiences  experiences[]
+  projects     projects[]
+  skills       skills[]
+}
+
+enum users_major {
+  it
+  journalist
+  designer
+  other
+}
