@@ -1,0 +1,25 @@
+name: Dockerized App Deployment
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy using ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 24700
+          script: |
+            cd /root/portfolio_be
+            git fetch origin
+            git checkout main
+            git pull
+            docker-compose build
+            docker build -t portfolio
+            docker stop portfolio-container || true  
+            docker rm portfolio-container || true   
+            docker run -d --name portfolio-container -p 4000:3000 portfolio
