@@ -1,7 +1,7 @@
 name: Dockerized App Deployment
 on:
   push:
-    branches: [main]
+    branches: [master]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,7 +16,7 @@ jobs:
           script: |
             cd /root/portfolio_be
             git fetch origin
-            git checkout main
+            git checkout master
             git pull
             docker-compose build
             docker build -t portfolio
