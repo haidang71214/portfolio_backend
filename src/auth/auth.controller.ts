@@ -8,9 +8,12 @@ import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from './stratergy/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryProvider } from '../cloudinary/cloundinary.provider';
+import { CloudUploadService } from '../shared/cloudinary.service';
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,
+    private readonly cloudynaryService:CloudUploadService
+  ) {}
 @Post("login")
 @HttpCode(200)
 async Login(
@@ -30,7 +33,8 @@ async register(
 ){
   try {
     if(file){
-      CloudinaryProvider
+      const res_images = this.cloudynaryService.uploadImage(file,"images");
+      body.avatar_url =  (await res_images).secure_url;
     }
     const result = await this.authService.Register(body);
     return res.status(200).json({result})
