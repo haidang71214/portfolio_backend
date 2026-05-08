@@ -40,5 +40,4 @@ COPY --from=builder /app/prisma ./prisma
 # Expose port (NestJS usually runs on 3000)
 EXPOSE 3000
 
-# Start the server using the production build
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main.js"]

@@ -16,6 +16,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
 SwaggerModule.setup('swagger', app, document);
 
+   console.log(`App listen on ${3000} thì phải chứ không nhớ á sr =))`);
   await app.listen(3000);
+   
 }
 bootstrap();
