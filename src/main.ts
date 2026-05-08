@@ -1,8 +1,21 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+
+  // Cấu hình Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Portfolio Backend API') // Tên dự án của bạn
+    .setDescription('Danh sách API cho hệ thống backend')
+    .setVersion('1.0')
+    .addBearerAuth() // Thêm cấu hình Token nếu bạn dùng JWT
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document); // Đường dẫn truy cập: http://localhost:3000/api
+
+  await app.listen(3000);
 }
 bootstrap();

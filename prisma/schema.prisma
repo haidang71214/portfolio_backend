@@ -91,16 +91,19 @@ model tech_stack {
 }
 
 model users {
-  id           String         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  username     String         @db.VarChar(20)
-  email        String         @db.VarChar(100)
-  pass         String         @db.VarChar(100)
-  major        users_major
-  created_at   DateTime?      @default(now()) @db.Timestamp(0)
-  certificates certificates[]
-  experiences  experiences[]
-  projects     projects[]
-  skills       skills[]
+  id            String         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  username      String         @db.VarChar(20)
+  email         String         @db.VarChar(100)
+  pass          String         @db.VarChar(100)
+  major         users_major
+  created_at    DateTime?      @default(now()) @db.Timestamp(0)
+  role          users_role     @default(user)
+  refresh_token String?        @db.VarChar(225)
+  resetToken    String?        @db.VarChar(30)
+  certificates  certificates[]
+  experiences   experiences[]
+  projects      projects[]
+  skills        skills[]
 }
 
 enum users_major {
@@ -108,4 +111,9 @@ enum users_major {
   journalist
   designer
   other
+}
+
+enum users_role {
+  admin
+  user
 }
