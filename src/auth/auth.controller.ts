@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Express } from 'express';
 import { Response } from 'express';
 import { CreateRegisterDto } from './dto/RegisterDto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from './stratergy/jwt.guard';
-
+import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -20,11 +20,17 @@ async Login(
     return res.json({response})
 }
 @Post('register')
+@ApiConsumes('multipart/form-data')
+@UseInterceptors(FileInterceptor('img'))
 async register(
   @Body() body:CreateRegisterDto,
-  @Res() res : Response
+  @Res() res : Response,
+  @UploadedFile() file:  Express.Multer.File
 ){
   try {
+    if(file){
+      
+    }
     const result = await this.authService.Register(body);
     return res.status(200).json({result})
   } catch (error) {

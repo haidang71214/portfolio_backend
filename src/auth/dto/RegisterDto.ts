@@ -1,3 +1,4 @@
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength, MaxLength, IsOptional, IsUrl } from 'class-validator';
 
 // Enum đúng theo bảng DB của bạn
@@ -37,8 +38,9 @@ export class CreateRegisterDto {
   @IsEnum(UserRole)
   @IsNotEmpty()
   role!: UserRole;
-// tạm thời chưa động cái này.
-//   @IsUrl({}, { message: 'URL ảnh không hợp lệ' })
-//   @IsOptional() // Trường này có thể không cần gửi lúc đăng ký
-//   images_url?: string;
+
+  @ApiProperty({type:'string',format:'binary',required:false})
+  images?:any;
+  @ApiHideProperty()
+  avatar_url?:string;
 }
