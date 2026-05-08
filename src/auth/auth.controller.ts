@@ -1,24 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { Response } from 'express';
 import { CreateRegisterDto } from './dto/RegisterDto';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from './stratergy/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 @Post("login")
+@HttpCode(200)
 async Login(
   @Res() res:Response,
   @Body() body:CreateAuthDto
 ){
-  try {
-    const response = this.authService.login(body);
-    return res.status(200).json({response})
-  } catch (error) {
-    return res.status(500).json({message:error})
-  }
+    const response = await this.authService.login(body);
+    return res.json({response})
 }
 @Post('register')
 async register(
@@ -55,4 +54,16 @@ async resetPassWord(
     const result = await this.authService.resetPassword(email, resetToken, newPassword);
     return res.status(200).json(result);
 }
+@ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Req() req) {
+    const { id } = req.user;
+    const result = await this.authService.LogoutService(id);
+    return {
+        message: "Logout successfully",
+        result
+    };
+  }
 }

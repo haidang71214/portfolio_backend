@@ -1,11 +1,9 @@
-import nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer'; // Import thêm type để hỗ trợ nhắc lệnh
-import dotenv from 'dotenv';
+import { Injectable } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
+import { Transporter } from 'nodemailer';
 
-dotenv.config();
-
+@Injectable() // Thêm dòng này để NestJS nhận diện Service
 export class EmailService {
-  // 1. Khai báo thuộc tính ở đây để TS nhận diện được
   private transporter: Transporter;
 
   constructor() {
@@ -20,7 +18,8 @@ export class EmailService {
     });
   }
 
-  sendMail = async (to: string, subject: string, html: string): Promise<any> => {
+  // Sử dụng async/await truyền thống cho rõ ràng
+  async sendMail(to: string, subject: string, html: string): Promise<any> {
     try {
       const mailOptions = {
         from: `"Hệ Thống" <${process.env.EMAIL_USER}>`,
@@ -36,6 +35,5 @@ export class EmailService {
       console.error('❌ Error sending email:', error);
       throw error;
     }
-  };
+  }
 }
-
