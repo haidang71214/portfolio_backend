@@ -7,6 +7,7 @@ import { CreateRegisterDto } from './dto/RegisterDto';
 import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from './stratergy/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryProvider } from '../cloudinary/cloundinary.provider';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -29,7 +30,7 @@ async register(
 ){
   try {
     if(file){
-      
+      CloudinaryProvider
     }
     const result = await this.authService.Register(body);
     return res.status(200).json({result})
