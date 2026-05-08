@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
@@ -8,13 +7,16 @@ import { KeyService } from '../key/key.service';
 import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateRegisterDto } from './dto/RegisterDto';
+import { HashService } from '../hash/Hash.Service';
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService,
+  constructor(private readonly prisma: PrismaService,
     private readonly jwtService : JwtService,
 private readonly keyService : KeyService,
- private readonly mailService : EmailService
+ private readonly mailService : EmailService,
+     private readonly hash : HashService
   ){}
+  // làm ở register,, login với reset pass.
   async login(createAuthDto: CreateAuthDto) {
       const {email,password} = createAuthDto;
       const findUser = await this.prisma.users.findFirst({where:{email}});

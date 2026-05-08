@@ -7,9 +7,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { ShareModule } from '../shared/sharedModule.module';
+import { HashModule } from '../hash/Hash.Controller';
 
 @Module({
-  imports:[KeyModule,EmailModule,PrismaModule,JwtModule.register({}),CloudinaryModule,ShareModule],
+  imports:[HashModule,KeyModule,EmailModule,PrismaModule,JwtModule.register({}),CloudinaryModule,ShareModule],
   controllers: [AuthController],
   providers: [AuthService],
 })

@@ -1,11 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { HashService } from '../hash/Hash.Service';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(private readonly prisma : PrismaService,
+    private readonly hasCode : HashService
+  ){}
+  async create(createUserDto: CreateUserDto) {
+  // nhớ mã hóa lại cái pass
+    const res = this.prisma.users.create({data:{
+      email:createUserDto.email,
+      images_url:createUserDto.avartar_url || null,
+      pass : await this.hasCode.hashPassword(createUserDto.password),
+      role:createUserDto.role,
+      major:createUserDto.major,
+      username:createUserDto.username
+    }})
+    return 
   }
 
   findAll() {

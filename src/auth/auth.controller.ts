@@ -9,10 +9,12 @@ import { JwtAuthGuard } from './stratergy/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryProvider } from '../cloudinary/cloundinary.provider';
 import { CloudUploadService } from '../shared/cloudinary.service';
+import { HashService } from '../hash/Hash.Service';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService,
-    private readonly cloudynaryService:CloudUploadService
+    private readonly cloudynaryService:CloudUploadService,
+
   ) {}
 @Post("login")
 @HttpCode(200)

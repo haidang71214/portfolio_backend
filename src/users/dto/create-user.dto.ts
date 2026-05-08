@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString, IsStrongPassword } from "class-validator";
-import { UserRole } from "../../auth/dto/RegisterDto";
+import { UserMajor, UserRole } from "../../auth/dto/RegisterDto";
 import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
 
 export class CreateUserDto {
@@ -16,4 +16,8 @@ export class CreateUserDto {
    images?: any;
    @ApiHideProperty()
    avartar_url!: string;
+   @IsEnum(UserMajor)
+   major!:UserMajor
+   @IsString()
+   username!:string
 }
