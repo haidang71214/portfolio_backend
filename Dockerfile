@@ -12,13 +12,13 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install app dependencies
-RUN npm ci
+RUN PRISMA_SKIP_POSTINSTALL_GENERATE=1 npm ci
 
 # Bundle app source
 COPY . .
 
 # Generate Prisma Client
-RUN DATABASE_URL="mysql://root:root@localhost:3306/db" npx prisma generate
+RUN npx prisma generate
 
 # Build the app
 RUN npm run build
