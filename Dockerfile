@@ -5,7 +5,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install openssl (required for Prisma)
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 COPY package*.json ./
@@ -18,7 +18,7 @@ RUN npm ci
 COPY . .
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN DATABASE_URL="mysql://root:root@localhost:3306/db" npx prisma generate
 
 # Build the app
 RUN npm run build
@@ -29,7 +29,7 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 # Install openssl (required for Prisma)
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 
 # Copy built app and dependencies from builder
 COPY --from=builder /app/node_modules ./node_modules
