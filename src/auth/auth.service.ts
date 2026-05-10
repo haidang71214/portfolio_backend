@@ -128,4 +128,7 @@ async forgotPassword(email: string) {
       data: result
     };
     } 
+    async extendToken(){
+      
+    }
 }
