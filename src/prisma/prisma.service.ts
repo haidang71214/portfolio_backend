@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
 @Injectable()
 export class PrismaService
@@ -7,7 +8,16 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    super(); // Prisma 7 sẽ tự động nạp config từ prisma.config.ts
+       const adapter = new PrismaMariaDb({
+      host: process.env.DB_HOST!,
+      port: Number(process.env.DB_PORT) || 3306,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASSWORD!,
+      database: process.env.DB_NAME!,
+      // connectionLimit: 10,     // tùy chọn, bạn có thể thêm
+    });
+
+    super({ adapter });
   }
 
 
