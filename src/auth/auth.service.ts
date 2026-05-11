@@ -1,4 +1,4 @@
-import { Injectable, Req, Res } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -8,8 +8,8 @@ import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateRegisterDto } from './dto/RegisterDto';
 import { HashService } from '../hash/Hash.Service';
-import { CustomRequest } from './stratergy/custom-request';
 import { Response } from 'express';
+import { NotFoundError } from 'rxjs';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService,
@@ -54,9 +54,9 @@ private readonly keyService : KeyService,
   async LogoutService(id: string) {
     const findUser = await this.prisma.users.findFirst({where:{id:id}}) 
     if(!findUser){
-      throw new Error("ôi trời ơi hong thấy user")
+      throw new NotFoundError("User not found")
     }
-  const res =  await this.prisma.users.update({where:{id:findUser.id},data:{
+    await this.prisma.users.update({where:{id:findUser.id},data:{
       refresh_token:null
     }})
   return {
@@ -67,10 +67,7 @@ private readonly keyService : KeyService,
 async forgotPassword(email: string) {
     const findUser = await this.prisma.users.findFirst({ where: { email } });
     if (!findUser) {
-      return {
-        status: 400,
-        message: "hong tìm thấy user",
-      };
+      throw new NotFoundError("Không tim thấy user")
     }
     const resetKey = uuidv4().slice(0, 7);
     const updateResetToken = await this.prisma.users.update({
@@ -94,17 +91,16 @@ async forgotPassword(email: string) {
 }
 // string thì có thể set state ở fe rồi truyền vào be nè.
   async resetPassword(email:string,resetToken:string,newPass:string){
-    const newUser = await this.prisma.users.findFirst({where:{email}});
-    if(!newUser)return{status:400,messsage:"Chắc sai gì đó"};
+    const newUser = await this.prisma.users.findFirst({where:{email},select:{email:true,resetToken:true,id:true}});
+    if(!newUser) throw new NotFoundError("Không tìm thấy yser");
     if(newUser.email != email || newUser.resetToken != resetToken){
-    return{message:"Ôi trời ơi sai cái gì kìa"}
+      throw new BadRequestException("Sai resetToken")
     }
-    const res = await this.prisma.users.update({where:{id:newUser.id},data:{
+    const res = await this.prisma.users.update({where:{id:newUser.id,email,resetToken },data:{
       pass:newPass
     }})
     const {pass,...results} = res;
     return{
-      message:"Wao wao wao, ok rồi đó bé",
       data:results,
      } 
   }
@@ -112,22 +108,16 @@ async forgotPassword(email: string) {
  async  Register(heheeuser : CreateRegisterDto) {
     const findUser = await this.prisma.users.findFirst({where:{email:heheeuser.email}});
     if(findUser){
-      return{
-        message:"User này đã tồn tại"
-      }
+      throw new ConflictException("Email này đang được sử dụng")
     }
-
+    const haspass = await bcrypt.hash(heheeuser.pass,10);
     const newUser = await this.prisma.users.create({data:{
-      email:heheeuser.email,
-      pass:heheeuser.pass,
-      major:heheeuser.major,
-      role:"user",
-      username:heheeuser.username
-    }})
-    const {pass,...result} = newUser;
+     ...heheeuser,
+      pass:haspass,
+      role:"user"
+    },select:{email:true,major:true,role:true,username:true}},)
     return {
-      message:"Register Successful",
-      data: result
+      newUser
     };
     } 
 async extendToken(refreshToken: string, res: Response) {

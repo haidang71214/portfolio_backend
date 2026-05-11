@@ -18,27 +18,31 @@ export class CreateRegisterDto {
   @IsString()
   @IsNotEmpty({ message: 'Username không được để trống' })
   @MaxLength(20)
+  @ApiProperty()
   username!: string;
 
   @IsEmail({}, { message: 'Email không hợp lệ' })
   @IsNotEmpty()
   @MaxLength(100)
+  @ApiProperty()
   email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(6, { message: 'Mật khẩu phải từ 6 ký tự' })
   @MaxLength(100)
+  @ApiProperty()
   pass!: string;
 
   @IsEnum(UserMajor, { message: 'Ngành nghề phải là: it, journalist, designer hoặc other' })
   @IsNotEmpty()
+  @ApiProperty()
   major!: UserMajor;
 
   @IsEnum(UserRole)
   @IsNotEmpty()
+  @ApiProperty()
   role!: UserRole;
-
   @ApiProperty({type:'string',format:'binary',required:false})
   images?:any;
   @ApiHideProperty()

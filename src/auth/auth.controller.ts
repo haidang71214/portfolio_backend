@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Req, HttpCode, UseGuards, UseInterceptors, UploadedFile, HttpException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { Express } from 'express';
@@ -17,6 +17,7 @@ export class AuthController {
 
   ) {}
 @Post("login")
+
 @HttpCode(200)
 async Login(
   @Res() res:Response,
@@ -31,6 +32,7 @@ async Login(
     return res.json({response})
 }
 @Post('register')
+@HttpCode(200)
 @ApiConsumes('multipart/form-data')
 @UseInterceptors(FileInterceptor('img'))
 async register(
@@ -38,31 +40,28 @@ async register(
   @Res() res : Response,
   @UploadedFile() file:  Express.Multer.File
 ){
-  try {
     if(file){
-      const res_images = this.cloudynaryService.uploadImage(file,"images");
+      const res_images = await this.cloudynaryService.uploadImage(file,"images");
       body.avatar_url =  (await res_images).secure_url;
     }
     const result = await this.authService.Register(body);
     return res.status(200).json({result})
-  } catch (error) {
-    return res.status(500).json({message:"Sever Errror"})
-  }
+  
 }
 @Post('forgotPass')
+@HttpCode(200)
 async forgotPassword(
   @Res() res:Response,
   @Body("email") email: string,
 ){
-try {
+
   // Đổi tên biến này thành 'result' hoặc 'authRes'
     const result = await this.authService.forgotPassword(email);
-    return res.status(200).json(result);
-} catch (error) {
-  return res.status(500).json({message:"Server Error"})
-}
+    return result
+
 }
 @Post('reset-pass')
+@HttpCode(200)
 async resetPassWord(
   @Res() res:Response,
   @Body("email") email:string,
@@ -70,9 +69,9 @@ async resetPassWord(
   @Body("newPassWord") newPassword:string
 ){
     const result = await this.authService.resetPassword(email, resetToken, newPassword);
-    return res.status(200).json(result);
+    return result
 }
-@ApiBearerAuth()
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(200)
@@ -85,6 +84,7 @@ async resetPassWord(
     };
   }
   @Post('extend-token')
+  @HttpCode(200)
   async refreshToken(@Res() res:Response,
 @Req()req
 )
