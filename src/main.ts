@@ -5,14 +5,10 @@ import * as cookieParser from 'cookie-parser'; // 1. Import cái này
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // 2. Sử dụng cookie-parser
   app.use(cookieParser());
-
-  // 3. Cấu hình CORS (Rất quan trọng để FE gửi được Cookie)
   app.enableCors({
-    origin: 'http://localhost:8080', // Thay bằng URL của Frontend bạn
-    credentials: true, // Cho phép trình duyệt gửi Cookie lên
+    origin: 'http://localhost:8080', 
+    credentials: true, // Cookie lên
   });
 
   // Cấu hình Swagger

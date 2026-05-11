@@ -75,10 +75,9 @@ async resetPassWord(
   @Post('logout')
   @HttpCode(200)
   async logout(@Req() req) {
-    const { id } = req.user;
-    const result = await this.authService.LogoutService(id);
+    const { userId } = req.user;
+    const result = await this.authService.LogoutService(userId);
     return {
-        message: "Logout successfully",
         result
     };
   }
@@ -88,12 +87,9 @@ async resetPassWord(
 @Req()req
 )
   {
-    try {
         const refreshToken  = req.cookies?.refreshToken;
       const result = await this.authService.extendToken(refreshToken,res);
       return result 
-    } catch (error) {
-      return res.status(500).json({message:"sever error"})
-    }
+  
   }
 }

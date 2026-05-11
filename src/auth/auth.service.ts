@@ -35,9 +35,7 @@ private readonly keyService : KeyService,
           algorithm: 'RS256',});
         // tạo refToken ngay khi tạo access;.
       const refToken = this.jwtService.sign(
-        { data: { userId: findUser.id,
-       
-         } },
+        { data: { userId: findUser.id}},
         {
           expiresIn: '7d',
           secret: this.keyService.getRefTokenPrivateKey(),
@@ -123,7 +121,6 @@ async forgotPassword(email: string) {
     };
     } 
 async extendToken(refreshToken: string, res: Response) {
-  
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
   try {
@@ -133,24 +130,47 @@ async extendToken(refreshToken: string, res: Response) {
       algorithms: ['RS256'],
     });
 
-    // 2. Tìm user trong DB (Phải có await)
+    // 2. Tìm user trong DB và kiểm tra xem refreshToken có khớp không
+    // Sử dụng findFirst vì id + refresh_token có thể không phải là composite unique key
     const user = await this.prisma.users.findFirst({
       where: { id: payload.data.userId, refresh_token: refreshToken }
     });
 
-    if (!user) return res.status(401).json({ message: "Invalid token" });
+    if (!user) return res.status(401).json({ message: "Invalid token or already used" });
 
     // 3. Tạo Access Token mới
     const newAccessToken = await this.jwtService.sign(
-      { data: { userId: user.id,
-        role: user.role 
-       } },
+      { data: { userId: user.id, role: user.role } },
       {
         expiresIn: '1h',
         secret: this.keyService.getPrivateKey(),
         algorithm: 'RS256',
       }
     );
+
+    // 4. Tạo Refresh Token mới (Rotation)
+    const newRefreshToken = await this.jwtService.sign(
+      { data: { userId: user.id } },
+      {
+        expiresIn: '7d',
+        secret: this.keyService.getRefTokenPrivateKey(),
+        algorithm: 'RS256',
+      }
+    );
+
+    // 5. Update Refresh Token mới vào DB
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { refresh_token: newRefreshToken }
+    });
+
+    // 6. Set lại Cookie Refresh Token mới cho trình duyệt
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: true, // Thêm secure nếu dùng HTTPS
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
+    });
 
     return res.status(200).json({ accessToken: newAccessToken });
   } catch (error) {
