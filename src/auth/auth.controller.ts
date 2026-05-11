@@ -23,6 +23,11 @@ async Login(
   @Body() body:CreateAuthDto
 ){
     const response = await this.authService.login(body);
+    res.cookie('refreshToken', response.refreshToken, {
+    httpOnly: true, 
+    maxAge: 7 * 24 * 60 * 60 * 1000 
+});
+
     return res.json({response})
 }
 @Post('register')
@@ -78,5 +83,18 @@ async resetPassWord(
         message: "Logout successfully",
         result
     };
+  }
+  @Post('extend-token')
+  async refreshToken(@Res() res:Response,
+@Req()req
+)
+  {
+    try {
+        const refreshToken  = req.cookies?.refreshToken;
+      const result = await this.authService.extendToken(refreshToken,res);
+      return result 
+    } catch (error) {
+      return res.status(500).json({message:"sever error"})
+    }
   }
 }

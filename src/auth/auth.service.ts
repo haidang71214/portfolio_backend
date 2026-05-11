@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Req, Res } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +8,8 @@ import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateRegisterDto } from './dto/RegisterDto';
 import { HashService } from '../hash/Hash.Service';
+import { CustomRequest } from './stratergy/custom-request';
+import { Response } from 'express';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService,
@@ -128,7 +130,38 @@ async forgotPassword(email: string) {
       data: result
     };
     } 
-    async extendToken(){
-      
-    }
+async extendToken(refreshToken: string, res: Response) {
+  
+  if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
+
+  try {
+    // 1. Verify token trước
+    const payload = await this.jwtService.verify(refreshToken, {
+      secret: this.keyService.getRefTokenPublicKey(), // Dùng Public Key để verify
+      algorithms: ['RS256'],
+    });
+
+    // 2. Tìm user trong DB (Phải có await)
+    const user = await this.prisma.users.findFirst({
+      where: { id: payload.data.userId, refresh_token: refreshToken }
+    });
+
+    if (!user) return res.status(401).json({ message: "Invalid token" });
+
+    // 3. Tạo Access Token mới
+    const newAccessToken = await this.jwtService.sign(
+      { data: { userId: user.id } },
+      {
+        expiresIn: '1h',
+        secret: this.keyService.getPrivateKey(),
+        algorithm: 'RS256',
+      }
+    );
+
+    return res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    return res.status(401).json({ message: "Token expired or invalid" });
+  }
+}
+
 }
