@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable} from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -30,12 +30,14 @@ private readonly keyService : KeyService,
         throw new Error("sai pass rồi bé ơi")
       }
       // tạo access.
-      const token = await this.jwtService.sign({data:{userId: findUser.id}}, { expiresIn: '1h',
+      const token = await this.jwtService.sign({data:{userId: findUser.id, role: findUser.role}}, { expiresIn: '1h',
           secret: this.keyService.getPrivateKey(),
           algorithm: 'RS256',});
         // tạo refToken ngay khi tạo access;.
       const refToken = this.jwtService.sign(
-        { data: { userId: findUser.id } },
+        { data: { userId: findUser.id,
+       
+         } },
         {
           expiresIn: '7d',
           secret: this.keyService.getRefTokenPrivateKey(),
@@ -140,7 +142,9 @@ async extendToken(refreshToken: string, res: Response) {
 
     // 3. Tạo Access Token mới
     const newAccessToken = await this.jwtService.sign(
-      { data: { userId: user.id } },
+      { data: { userId: user.id,
+        role: user.role 
+       } },
       {
         expiresIn: '1h',
         secret: this.keyService.getPrivateKey(),

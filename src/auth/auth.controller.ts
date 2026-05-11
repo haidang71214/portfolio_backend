@@ -17,7 +17,6 @@ export class AuthController {
 
   ) {}
 @Post("login")
-
 @HttpCode(200)
 async Login(
   @Res() res:Response,

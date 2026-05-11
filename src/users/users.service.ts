@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,6 +9,7 @@ export class UsersService {
   constructor(private readonly prisma : PrismaService,
     private readonly hasCode : HashService,
   ){}
+
   async create(createUserDto: CreateUserDto) {
   // nhớ mã hóa lại cái pass
     if(await this.prisma.users.findFirst({where:{email:createUserDto.email}}) ){
@@ -40,16 +41,21 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.users.findFirst({where:{id:id}})
-    if(!user)return{message:"Không có user ó"}
-    return user;
-  }
+  const user = await this.prisma.users.findUnique({
+    where: { id: id },
+    select: { // Thêm select vào đây
+      id: true,
+      username: true,
+      email: true,
+      images_url: true,
+      role: true,
+      major: true,
+      created_at: true,
+    }
+  });
+  
+  if (!user) throw new NotFoundException("Không có user này đâu bé ơi");
+  return user;
+}
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
 }

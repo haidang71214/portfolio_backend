@@ -1,45 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpCode, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ServerResponse } from 'http';
+import { AuthService } from '../auth/auth.service';
+import { JwtAuthGuard } from '../auth/stratergy/jwt.guard';
+import { RolesGuard } from '../auth/stratergy/role.guard';
+import { Roles } from '../auth/decorator/role.decorator';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService,
+    private readonly authService:AuthService ) {}
+@Post()
+@UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
+@Roles('admin') // Dùng Decorator để đánh dấu chỉ Admin mới được vào
+async create(@Body() createUserDto: CreateUserDto) {
+  return await this.usersService.create(createUserDto);
+}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
 
   @Get()
+  @HttpCode(200)
   async findAll() {
-    try {
           return await this.usersService.findAll();
-    } catch (error:any) {
-      throw new Error(error)
-    }
-
   }
 
   @Get(':id')
+  @HttpCode(200)
   async findOne(@Param('id') id: string,@Res() res:Response) {
-    try {
       const result = await this.usersService.findOne(id);
       return result
-    } catch (error : any) {
-      throw new Error(error)
-    }
+   
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
-  }
 }
