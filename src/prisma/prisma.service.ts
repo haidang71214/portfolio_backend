@@ -9,13 +9,14 @@ export class PrismaService
 {
   constructor() {
        const adapter = new PrismaMariaDb({
-      host: process.env.DB_HOST!,
-      port: Number(process.env.DB_PORT) || 3306,
-      user: process.env.DB_USER!,
-      password: process.env.DB_PASSWORD!,
-      database: process.env.DB_NAME!,
-      // connectionLimit: 10,     // tùy chọn, bạn có thể thêm
-    });
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT) || 8888,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  allowPublicKeyRetrieval: true, 
+});
+
 
     super({ adapter });
   }

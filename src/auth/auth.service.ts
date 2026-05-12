@@ -1,8 +1,7 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import bcrypt from 'bcryptjs';
 import { KeyService } from '../key/key.service';
 import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +9,6 @@ import { CreateRegisterDto } from './dto/RegisterDto';
 import { HashService } from '../hash/Hash.Service';
 import { Response } from 'express';
 import { NotFoundError } from 'rxjs';
-import { ForgotPasswordDto } from './dto/ForgotPassDto';
 import { ResetPasswordDto } from './dto/ResetPassDto';
 @Injectable()
 export class AuthService {
@@ -29,10 +27,11 @@ private readonly keyService : KeyService,
       role: true,
       major: true,
       created_at: true,
+      pass:true
   };
   async login(createAuthDto: CreateAuthDto) {
       const {email,password} = createAuthDto;
-      const findUser = await this.prisma.users.findFirst({where:{email}});
+      const findUser = await this.prisma.users.findFirst({where:{email},select:this.userSafeSelect});
       if(!findUser){
         throw new Error("user đéo có trong hệ thống")
       }
