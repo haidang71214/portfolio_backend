@@ -11,6 +11,7 @@ import { HashService } from '../hash/Hash.Service';
 import { Response } from 'express';
 import { NotFoundError } from 'rxjs';
 import { ForgotPasswordDto } from './dto/ForgotPassDto';
+import { ResetPasswordDto } from './dto/ResetPassDto';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService,
@@ -35,7 +36,7 @@ private readonly keyService : KeyService,
       if(!findUser){
         throw new Error("user đéo có trong hệ thống")
       }
-      const checkPass = await bcrypt.compare(password,findUser.pass);
+      const checkPass = await this.hash.comparePassword(password,findUser.pass);
       if(!checkPass){
         throw new Error("sai pass rồi bé ơi")
       }
@@ -75,9 +76,9 @@ private readonly keyService : KeyService,
   }
 
 async forgotPassword(email: string) {
-    const findUser = await this.prisma.users.findFirst({ where:  {email}  });
+    const findUser = await this.prisma.users.findUnique({where:{email:email}});
     if (!findUser) {
-      throw new NotFoundError("Không tim thấy user")
+      throw new BadRequestException("Không tim thấy user")
     }
     const resetKey = uuidv4().slice(0, 7);
     const updateResetToken = await this.prisma.users.update({
@@ -100,14 +101,16 @@ async forgotPassword(email: string) {
   
 }
 // string thì có thể set state ở fe rồi truyền vào be nè.
-  async resetPassword(email:string,resetToken:string,newPass:string){
-    const newUser = await this.prisma.users.findFirst({where:{email},select:{email:true,resetToken:true,id:true}});
+  async resetPassword(reset : ResetPasswordDto){
+    const newUser = await this.prisma.users.findFirst({where:{email:reset.email},select:{email:true,resetToken:true,id:true}});
     if(!newUser) throw new NotFoundError("Không tìm thấy yser");
-    if(newUser.email != email || newUser.resetToken != resetToken){
+    
+    if(newUser.email != reset.email || newUser.resetToken != reset.resetToken){
       throw new BadRequestException("Sai resetToken")
     }
-    const res = await this.prisma.users.update({where:{id:newUser.id,email,resetToken },data:{
-      pass:newPass
+    const hehePas = await this.hash.hashPassword(reset.newPassWord);
+    const res = await this.prisma.users.update({where:{id:newUser.id },data:{
+      pass:hehePas
     }})
     const {pass,...results} = res;
     return{

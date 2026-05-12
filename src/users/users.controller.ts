@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/stratergy/jwt.guard';
 import { RolesGuard } from '../auth/stratergy/role.guard';
 import { Roles } from '../auth/decorator/role.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
@@ -13,11 +14,12 @@ export class UsersController {
     private readonly authService:AuthService ) {}
 @Post()
 @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
+@ApiBearerAuth()
 @Roles('admin') // Dùng Decorator để đánh dấu chỉ Admin mới được vào
 async create(@Body() createUserDto: CreateUserDto) {
   return await this.usersService.create(createUserDto);
 }
-
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
 @Roles('admin')
   @Get()
@@ -26,6 +28,7 @@ async create(@Body() createUserDto: CreateUserDto) {
           return await this.usersService.findAll();
   }
 @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
+@ApiBearerAuth()
 @Roles('admin')
   @Get(':id')
   @HttpCode(200)
@@ -34,6 +37,7 @@ async create(@Body() createUserDto: CreateUserDto) {
       return result
    
   }
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
   @Roles('admin')
   @Patch(':id')

@@ -11,6 +11,7 @@ import { CloudinaryProvider } from '../cloudinary/cloundinary.provider';
 import { CloudUploadService } from '../shared/cloudinary.service';
 import { HashService } from '../hash/Hash.Service';
 import { ForgotPasswordDto } from './dto/ForgotPassDto';
+import { ResetPasswordDto } from './dto/ResetPassDto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService,
@@ -63,11 +64,9 @@ async forgotPassword(
 @HttpCode(200)
 async resetPassWord(
   @Res() res:Response,
-  @Body("email") email:string,
-  @Body("resetToken") resetToken:string,
-  @Body("newPassWord") newPassword:string
+  @Body() resetPasswordDto: ResetPasswordDto 
 ){
-    const result = await this.authService.resetPassword(email, resetToken, newPassword);
+    const result = await this.authService.resetPassword(resetPasswordDto);
     return result
 }
   @ApiBearerAuth()

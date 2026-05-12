@@ -9,7 +9,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [ConfigModule.forRoot(),AuthModule, EmailModule, UsersModule, CloudinaryModule],
+  imports: [ConfigModule.forRoot(), AuthModule, EmailModule, UsersModule, CloudinaryModule],
   controllers: [AppController],
   providers: [AppService],
 })
