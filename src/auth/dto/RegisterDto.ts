@@ -35,13 +35,14 @@ export class CreateRegisterDto {
   pass!: string;
 
   @IsEnum(UserMajor, { message: 'Ngành nghề phải là: it, journalist, designer hoặc other' })
+  
   @IsNotEmpty()
-  @ApiProperty()
+  @ApiProperty({enum:UserMajor})
   major!: UserMajor;
 
   @IsEnum(UserRole)
   @IsNotEmpty()
-  @ApiProperty()
+  @ApiProperty({enum:UserRole})
   role!: UserRole;
   @ApiProperty({type:'string',format:'binary',required:false})
   images?:any;

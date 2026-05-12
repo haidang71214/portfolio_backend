@@ -7,8 +7,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   app.enableCors({
-    origin: 'http://localhost:8080', 
-    credentials: true, // Cookie lên
+   origin: ['http://localhost:8080', 'http://localhost:3000'], 
+  credentials: true, // Cookie lên
   });
 
   // Cấu hình Swagger

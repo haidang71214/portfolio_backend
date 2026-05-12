@@ -10,6 +10,7 @@ import { CreateRegisterDto } from './dto/RegisterDto';
 import { HashService } from '../hash/Hash.Service';
 import { Response } from 'express';
 import { NotFoundError } from 'rxjs';
+import { ForgotPasswordDto } from './dto/ForgotPassDto';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService,
@@ -19,6 +20,15 @@ private readonly keyService : KeyService,
      private readonly hash : HashService
   ){}
   // làm ở register,, login với reset pass.
+  private readonly userSafeSelect = {
+   id: true,
+      username: true,
+      email: true,
+      images_url: true,
+      role: true,
+      major: true,
+      created_at: true,
+  };
   async login(createAuthDto: CreateAuthDto) {
       const {email,password} = createAuthDto;
       const findUser = await this.prisma.users.findFirst({where:{email}});
@@ -65,7 +75,7 @@ private readonly keyService : KeyService,
   }
 
 async forgotPassword(email: string) {
-    const findUser = await this.prisma.users.findFirst({ where: { email } });
+    const findUser = await this.prisma.users.findFirst({ where:  {email}  });
     if (!findUser) {
       throw new NotFoundError("Không tim thấy user")
     }
@@ -110,14 +120,16 @@ async forgotPassword(email: string) {
     if(findUser){
       throw new ConflictException("Email này đang được sử dụng")
     }
-    const haspass = await bcrypt.hash(heheeuser.pass,10);
-    const newUser = await this.prisma.users.create({data:{
-     ...heheeuser,
-      pass:haspass,
-      role:"user"
-    },select:{email:true,major:true,role:true,username:true}},)
+      const { avatar_url, images, ...userData } = heheeuser;
+   const haspass = await this.hash.hashPassword(heheeuser.pass);
+    const data = await this.prisma.users.create({data:{
+   ...userData,      
+      pass: haspass,
+      images_url: avatar_url, 
+      role: "user"
+    },select:this.userSafeSelect},)
     return {
-      newUser
+      data
     };
     } 
 async extendToken(refreshToken: string, res: Response) {

@@ -100,7 +100,7 @@ model users {
   role          users_role     @default(user)
   refresh_token String?        @db.VarChar(500)
   resetToken    String?        @db.VarChar(30)
-  images_url    String?        @db.VarChar(30)
+  images_url    String?        @db.VarChar(500)
   certificates  certificates[]
   experiences   experiences[]
   projects      projects[]

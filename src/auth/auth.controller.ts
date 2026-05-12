@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryProvider } from '../cloudinary/cloundinary.provider';
 import { CloudUploadService } from '../shared/cloudinary.service';
 import { HashService } from '../hash/Hash.Service';
+import { ForgotPasswordDto } from './dto/ForgotPassDto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService,
@@ -33,7 +34,7 @@ async Login(
 @Post('register')
 @HttpCode(200)
 @ApiConsumes('multipart/form-data')
-@UseInterceptors(FileInterceptor('img'))
+@UseInterceptors(FileInterceptor('images'))
 async register(
   @Body() body:CreateRegisterDto,
   @Res() res : Response,
@@ -50,12 +51,11 @@ async register(
 @Post('forgotPass')
 @HttpCode(200)
 async forgotPassword(
-  @Res() res:Response,
-  @Body("email") email: string,
+  @Body() body: ForgotPasswordDto,
 ){
 
   // Đổi tên biến này thành 'result' hoặc 'authRes'
-    const result = await this.authService.forgotPassword(email);
+    const result = await this.authService.forgotPassword(body.email);
     return result
 
 }

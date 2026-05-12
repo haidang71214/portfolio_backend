@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, NotImplementedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,11 +9,19 @@ export class UsersService {
   constructor(private readonly prisma : PrismaService,
     private readonly hasCode : HashService,
   ){}
-
+public readonly userSafeSelect = {
+   id: true,
+      username: true,
+      email: true,
+      images_url: true,
+      role: true,
+      major: true,
+      created_at: true,
+  };
   async create(createUserDto: CreateUserDto) {
   // nhớ mã hóa lại cái pass
     if(await this.prisma.users.findFirst({where:{email:createUserDto.email}}) ){
-      return {message:"Email đã tồn tại trong hệ thống"};
+      throw new ConflictException("Email Already Exitst")
     }
     const res = await  this.prisma.users.create({data:{
       email:createUserDto.email,
@@ -22,20 +30,15 @@ export class UsersService {
       role:createUserDto.role,
       major:createUserDto.major,
       username:createUserDto.username
-    }})
-    const {pass,...result} = res;
-    return {result}
+    },select:this.userSafeSelect})
+    return res
   }
 
    async findAll(){
-    const userList = await this.prisma.users.findMany({select:{
-      username:true,
-      images_url:true,
-      role:true,
-
-    }});
+    const userList = await this.prisma.users.findMany({select:this.userSafeSelect});
     // khi findmany, nên dùng cái này để nó 
-    if(!userList)return{message:"Không nó nổi 1 user để tìm"}
+    if(!userList)
+      throw new NotFoundException("Yea, Not have user yet")
     return userList;
     
   }
@@ -43,19 +46,17 @@ export class UsersService {
   async findOne(id: string) {
   const user = await this.prisma.users.findUnique({
     where: { id: id },
-    select: { // Thêm select vào đây
-      id: true,
-      username: true,
-      email: true,
-      images_url: true,
-      role: true,
-      major: true,
-      created_at: true,
-    }
+    select: this.userSafeSelect
   });
   
   if (!user) throw new NotFoundException("Không có user này đâu bé ơi");
   return user;
 }
 
+ async updateUser(id:string,createuserDto : UpdateUserDto){
+  const res = await this.prisma.users.update({where:{id},data:{
+    ...createuserDto
+  },select:this.userSafeSelect})
+  return res;
+ }
 }
