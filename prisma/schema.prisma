@@ -106,6 +106,12 @@ model users {
   projects        projects[]
   skills          skills[]
   user_portfolios user_portfolios?
+  
+  user_themes     user_themes[]
+  transactions    transactions[]
+  journalist_articles   journalist_articles[]
+  business_achievements business_achievements[]
+  economic_research     economic_research[]
 }
 
 model theme_templates {
@@ -119,19 +125,102 @@ model theme_templates {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  portfolios user_portfolios[]
+  stock_limit    Int?
+  sales_count    Int      @default(0)
+  is_active      Boolean  @default(true)
+
+  portfolios     user_portfolios[]
+  user_themes    user_themes[]
+  transactions   transactions[]
+}
+
+model user_themes {
+  id           String          @id @default(uuid())
+  user_id      String          @db.VarChar(36)
+  theme_id     String
+  purchased_at DateTime        @default(now())
+  expires_at   DateTime?       
+  
+  user         users           @relation(fields: [user_id], references: [id])
+  theme        theme_templates @relation(fields: [theme_id], references: [id])
+
+  @@unique([user_id, theme_id])
+  @@index([user_id])
+  @@index([theme_id])
 }
 
 model user_portfolios {
   id            String          @id @default(uuid())
-  user_id       String          @unique // Mỗi user thường chỉ có 1 portfolio hoạt động
-  theme_id      String // User chọn theme nào?
+  user_id       String          @unique
+  theme_id      String
   custom_config Json?
-  title         String? // Tiêu đề trang portfolio (VD: "Hải Đăng - Senior Dev")
+  title         String?
   bio           String?         @db.Text
   theme         theme_templates @relation(fields: [theme_id], references: [id])
   user          users           @relation(fields: [user_id], references: [id])
 }
+
+model transactions {
+  id             String          @id @default(uuid())
+  user_id        String          @db.VarChar(36)
+  theme_id       String
+  amount         Decimal         @db.Decimal(10, 2)
+  status         TransactionStatus @default(PENDING)
+  payment_method String?         
+  transaction_id String?         @unique 
+  created_at     DateTime        @default(now())
+
+  user           users           @relation(fields: [user_id], references: [id])
+  theme          theme_templates @relation(fields: [theme_id], references: [id])
+
+  @@index([user_id])
+  @@index([theme_id])
+}
+
+model journalist_articles {
+  id             String   @id @default(uuid())
+  user_id        String   @db.VarChar(36)
+  title          String   // Tiêu đề bài báo
+  summary        String?  @db.Text // Tóm tắt nội dung (Sapo)
+  content_url    String   // Link bài báo online
+  publisher_name String   // Tên tòa soạn (VD: VnExpress, Tuổi Trẻ...)
+  category       String?  // Chuyên mục (VD: Chính trị, Văn hóa, Xã hội)
+  published_at   DateTime? @db.Date
+  thumbnail_url  String?
+  
+  user           users    @relation(fields: [user_id], references: [id])
+  tags           Json?    // Lưu các từ khóa/kỹ năng (VD: ["Phỏng vấn", "Điều tra"])
+}
+model business_achievements {
+  id            String   @id @default(uuid())
+  user_id       String   @db.VarChar(36)
+  title         String   // Tên thành tựu (VD: Tăng trưởng doanh thu, Quản lý ngân sách)
+  description   String?  @db.Text
+  
+  // Trường đặc thù cho kinh tế: Con số thực tế
+  metric_value  String?  // Giá trị (VD: "20", "1.5")
+  metric_unit   String?  // Đơn vị (VD: "%", "Tỷ VNĐ", "Triệu USD")
+  
+  achieved_at   DateTime? @db.Date
+  organization  String?  // Tại đơn vị nào?
+
+  user          users    @relation(fields: [user_id], references: [id])
+  tags          Json?    // Lưu các công cụ/kỹ năng (VD: ["Excel", "SAP"])
+}
+
+model economic_research {
+  id            String   @id @default(uuid())
+  user_id       String   @db.VarChar(36)
+  title         String   // Tên báo cáo/nghiên cứu thị trường
+  organization  String?  // Đơn vị chủ quản/khách hàng
+  summary       String?  @db.Text
+  file_url      String?  // Link file PDF báo cáo
+  published_at  DateTime? @db.Date
+
+  user          users    @relation(fields: [user_id], references: [id])
+  tags          Json?    // Lưu các từ khóa (VD: ["Market Research", "Data Analysis"])
+}
+
 
 enum users_major {
   it
@@ -143,4 +232,11 @@ enum users_major {
 enum users_role {
   admin
   user
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }

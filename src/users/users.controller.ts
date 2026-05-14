@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpCode, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpCode, Req, UseGuards, UploadedFile } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuthService } from '../auth/auth.service';
@@ -7,11 +7,15 @@ import { RolesGuard } from '../auth/stratergy/role.guard';
 import { Roles } from '../auth/decorator/role.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Response } from 'express';
+import { CloudUploadService } from '../shared/cloudinary.service';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService,
-    private readonly authService:AuthService ) {}
+    private readonly authService:AuthService,
+  private readonly cloudynaryService:CloudUploadService
+  ) {}
 @Post()
 @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
 @ApiBearerAuth()
@@ -44,11 +48,34 @@ async create(@Body() createUserDto: CreateUserDto) {
   @HttpCode(200)
   async updateUser(
     @Param('id') id:string,
-    @Res() res:Response,
-    @Req() body:UpdateUserDto
+    @Body() body:UpdateUserDto,
+    @UploadedFile() file:  Express.Multer.File
   ){
+// chỗ này có ảnh với haspass á, cẩn thận tí.
+   if(file){
+      const res_images = await this.cloudynaryService.uploadImage(file,"images");
+      body.avartar_url =  (await res_images).secure_url;
+    }
     const result = await this.usersService.updateUser(id,body)
     return result;
   }
-
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  @Patch('me/:id')
+  async updateMe(
+    @Res() res:Response,
+    @Body() body:UpdateUserDto,
+    @Req() req,
+        @UploadedFile() file: Express.Multer.File 
+  ){
+     const { userId } = req.user;
+    if (file) {
+      const res_images = await this.cloudynaryService.uploadImage(file, "images");
+      body.avartar_url = res_images.secure_url;
+    }
+    // 3. Gọi service và truyền đủ 2 tham số
+    const result = await this.usersService.updateMyAccount(userId, body);
+    return result;
+  }
 }

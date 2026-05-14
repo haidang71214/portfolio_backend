@@ -52,11 +52,50 @@ public readonly userSafeSelect = {
   if (!user) throw new NotFoundException("Không có user này đâu bé ơi");
   return user;
 }
+  // admin update
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    const data: any = { ...updateUserDto };
+    if (updateUserDto.avartar_url) {
+         // ở đây thì nó sẽ tạo ra 1 trường "thừa" là avatar_url
+      data.images_url = updateUserDto.avartar_url;
+    }
+    // việc mình xóa trường thừa ở đây, là để mình nhét data vào update ở dưới mà không có cản trở về mặt ts
+    // đồn thời sẽ tiết kiệm ram khá nhiều 
+    delete data.avartar_url;
+    if (updateUserDto.password) {
+    data.pass = await this.hasCode.hashPassword(updateUserDto.password);
+    }
+    delete data.password;
+    // Xóa trường images nếu có (trường này dùng để upload file)
+    delete data.images;
+    const res = await this.prisma.users.update({
+      where: { id },
+      data,
+      select: this.userSafeSelect
+    });
+    return res;
+  }
 
- async updateUser(id:string,createuserDto : UpdateUserDto){
-  const res = await this.prisma.users.update({where:{id},data:{
-    ...createuserDto
-  },select:this.userSafeSelect})
-  return res;
- }
+  async updateMyAccount(id: string, updateUserDto: UpdateUserDto) {
+    const data: any = { ...updateUserDto };
+    if (updateUserDto.avartar_url) {
+         // ở đây thì nó sẽ tạo ra 1 trường "thừa" là avatar_url
+      data.images_url = updateUserDto.avartar_url;
+    }
+    // việc mình xóa trường thừa ở đây, là để mình nhét data vào update ở dưới mà không có cản trở về mặt ts
+    // đồn thời sẽ tiết kiệm ram khá nhiều 
+    delete data.avartar_url;
+    if (updateUserDto.password) {
+    data.pass = await this.hasCode.hashPassword(updateUserDto.password);
+    }
+    delete data.password;
+    // Xóa trường images nếu có (trường này dùng để upload file)
+    delete data.images;
+    const res = await this.prisma.users.update({
+      where: { id },
+      data,
+      select: this.userSafeSelect
+    });
+    return res;
+  }
 }
