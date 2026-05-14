@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpCode, Req, UseGuards, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpCode, Req, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuthService } from '../auth/auth.service';
@@ -9,6 +9,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CloudUploadService } from '../shared/cloudinary.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -36,7 +37,7 @@ async create(@Body() createUserDto: CreateUserDto) {
 @Roles('admin')
   @Get(':id')
   @HttpCode(200)
-  async findOne(@Param('id') id: string,@Res() res:Response) {
+  async findOne(@Param('id') id: string) {
       const result = await this.usersService.findOne(id);
       return result
    
@@ -45,6 +46,7 @@ async create(@Body() createUserDto: CreateUserDto) {
   @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
   @Roles('admin')
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('images'))
   @HttpCode(200)
   async updateUser(
     @Param('id') id:string,
@@ -63,11 +65,11 @@ async create(@Body() createUserDto: CreateUserDto) {
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   @Patch('me/:id')
+  @UseInterceptors(FileInterceptor('images'))
   async updateMe(
-    @Res() res:Response,
     @Body() body:UpdateUserDto,
     @Req() req,
-        @UploadedFile() file: Express.Multer.File 
+    @UploadedFile() file: Express.Multer.File 
   ){
      const { userId } = req.user;
     if (file) {

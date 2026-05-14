@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable} from '@nestjs/common';
+import { BadGatewayException, BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -8,7 +8,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { CreateRegisterDto } from './dto/RegisterDto';
 import { HashService } from '../hash/Hash.Service';
 import { Response } from 'express';
-import { NotFoundError } from 'rxjs';
 import { ResetPasswordDto } from './dto/ResetPassDto';
 @Injectable()
 export class AuthService {
@@ -33,11 +32,11 @@ private readonly keyService : KeyService,
       const {email,password} = createAuthDto;
       const findUser = await this.prisma.users.findFirst({where:{email},select:this.userSafeSelect});
       if(!findUser){
-        throw new Error("user đéo có trong hệ thống")
+        throw new NotFoundException("user đéo có trong hệ thống")
       }
       const checkPass = await this.hash.comparePassword(password,findUser.pass);
       if(!checkPass){
-        throw new Error("sai pass rồi bé ơi")
+        throw new BadRequestException("sai pass rồi bé ơi")
       }
       // tạo access.
       const token = await this.jwtService.sign({data:{userId: findUser.id, role: findUser.role}}, { expiresIn: '1h',
@@ -64,7 +63,7 @@ private readonly keyService : KeyService,
   async LogoutService(id: string) {
     const findUser = await this.prisma.users.findFirst({where:{id:id}}) 
     if(!findUser){
-      throw new NotFoundError("User not found")
+      throw new NotFoundException("User not found")
     }
     await this.prisma.users.update({where:{id:findUser.id},data:{
       refresh_token:null
@@ -102,7 +101,7 @@ async forgotPassword(email: string) {
 // string thì có thể set state ở fe rồi truyền vào be nè.
   async resetPassword(reset : ResetPasswordDto){
     const newUser = await this.prisma.users.findFirst({where:{email:reset.email},select:{email:true,resetToken:true,id:true}});
-    if(!newUser) throw new NotFoundError("Không tìm thấy yser");
+    if(!newUser) throw new NotFoundException ("Không tìm thấy yser");
     
     if(newUser.email != reset.email || newUser.resetToken != reset.resetToken){
       throw new BadRequestException("Sai resetToken")

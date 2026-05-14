@@ -63,7 +63,6 @@ async forgotPassword(
 @Post('reset-pass')
 @HttpCode(200)
 async resetPassWord(
-  @Res() res:Response,
   @Body() resetPasswordDto: ResetPasswordDto 
 ){
     const result = await this.authService.resetPassword(resetPasswordDto);
