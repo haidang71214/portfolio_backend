@@ -43,9 +43,9 @@ public readonly userSafeSelect = {
     
   }
 
-  async findOne(id: string) {
+  async findOne(email: string) {
   const user = await this.prisma.users.findUnique({
-    where: { id: id },
+    where: { email },
     select: this.userSafeSelect
   });
   

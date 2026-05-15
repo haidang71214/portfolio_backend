@@ -32,15 +32,11 @@ async create(@Body() createUserDto: CreateUserDto) {
   async findAll() {
           return await this.usersService.findAll();
   }
-@UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
-@ApiBearerAuth()
-@Roles('admin')
-  @Get(':id')
+  @Get(':email')
   @HttpCode(200)
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('email') id: string) {
       const result = await this.usersService.findOne(id);
       return result
-   
   }
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây

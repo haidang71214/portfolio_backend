@@ -1,7 +1,8 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { CloudinaryModule } from "../cloudinary/cloudinary.module";
 import { CloudUploadService } from "./cloudinary.service";
 
+@Global()
 @Module({
    imports:[CloudinaryModule],
    providers:[CloudUploadService],
