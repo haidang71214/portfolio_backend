@@ -8,9 +8,10 @@ import { UsersModule } from './users/users.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProfileModule } from './profile/profile.module';
+import { TechnologyModule } from './technology/technology.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), AuthModule, EmailModule, UsersModule, CloudinaryModule, ProfileModule],
+  imports: [ConfigModule.forRoot(), AuthModule, EmailModule, UsersModule, CloudinaryModule, ProfileModule, TechnologyModule],
   controllers: [AppController],
   providers: [AppService],
 })
