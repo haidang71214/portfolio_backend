@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/stratergy/jwt.guard';
 import { RolesGuard } from '../auth/stratergy/role.guard';
 import { Roles } from '../auth/decorator/role.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CloudUploadService } from '../shared/cloudinary.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -20,8 +20,16 @@ export class UsersController {
 @Post()
 @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
 @ApiBearerAuth()
+// á à đây còn chưa có images.
+@ApiConsumes('multipart/form-data')
+@UseInterceptors(FileInterceptor('images')) // trường hứng.
 @Roles('admin') // Dùng Decorator để đánh dấu chỉ Admin mới được vào
-async create(@Body() createUserDto: CreateUserDto) {
+async create(@Body() createUserDto: CreateUserDto,
+  @UploadedFile() file:  Express.Multer.File) {
+        if(file){
+      const res_images = await this.cloudynaryService.uploadImage(file,"images");
+      createUserDto.avartar_url =  (await res_images).secure_url;
+    }
   return await this.usersService.create(createUserDto);
 }
 @ApiBearerAuth()
@@ -38,10 +46,12 @@ async create(@Body() createUserDto: CreateUserDto) {
       const result = await this.usersService.findOne(id);
       return result
   }
+  // tương tự, nhma hình như ở đây có các trường thừa.
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard) // Thêm Guard vào đây
   @Roles('admin')
   @Patch(':id')
+  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('images'))
   @HttpCode(200)
   async updateUser(
@@ -61,6 +71,7 @@ async create(@Body() createUserDto: CreateUserDto) {
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   @Patch('me/:id')
+  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('images'))
   async updateMe(
     @Body() body:UpdateUserDto,

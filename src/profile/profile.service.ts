@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
@@ -139,26 +139,55 @@ export class ProfileService {
     });
     return result;
   }
-
-  async deleteCertificate(id: string) {
+// trừ get là public ra thì mọi cái ở sau đó đều do admin hoặc là chính người dùng tạ
+  async deleteCertificate(id: string,user_id?:string) {
+    if(user_id){
+          const checkSert = await this.prisma.certificates.findFirstOrThrow({where:{user_id}})
+          if(!checkSert){
+            throw new NotFoundException("you're not have permission with this certificate"); 
+          }
+           return await this.prisma.certificates.delete({ 
+      where: { id } 
+    });
+    }
     return await this.prisma.certificates.delete({ 
       where: { id } 
     });
   }
-
-  async upsertCertificateUser(user_id: string, dto: UpsertCertificateDto) {
+// vấn đề là đây có 2 cái id nữa.
+// có id khi update, không có khi create
+  async upsertCertificateUser(user_id: string, dto: UpsertCertificateDto) { // Bỏ cái id?:string ở cuối đi vì đã có dto.id
+    
+    // TRƯỜNG HỢP 1: CÓ ID -> UPDATE
     if (dto.id) {
+      // 1. Kiểm tra xem chứng chỉ có tồn tại và thuộc về user này không
       const existingCert = await this.prisma.certificates.findFirst({
         where: { id: dto.id, user_id }
       });
+      
       if (!existingCert) {
         throw new NotFoundException('Certificate not found or does not belong to user');
       }
+
+      // 2. Dùng lệnh update thẳng luôn
+      return await this.prisma.certificates.update({
+        where: { id: dto.id },
+        data: {
+          name: dto.name,
+          organization: dto.organization,
+          issue_date: dto.issue_date,
+          expiration_date: dto.expiration_date,
+          credential_id: dto.credential_id,
+          credential_url: dto.credential_url,
+          image_url: dto.image_url,
+        }
+      });
     }
 
-    return await this.prisma.certificates.upsert({
-      where: { id: dto.id},
-      update: {
+    // TRƯỜNG HỢP 2: KHÔNG CÓ ID -> CREATE
+    return await this.prisma.certificates.create({
+      data: {
+        user_id, // Nhớ gán user_id vào nhé
         name: dto.name,
         organization: dto.organization,
         issue_date: dto.issue_date,
@@ -166,19 +195,10 @@ export class ProfileService {
         credential_id: dto.credential_id,
         credential_url: dto.credential_url,
         image_url: dto.image_url,
-      },
-      create: {
-        user_id,
-        name: dto.name,
-        organization: dto.organization,
-        issue_date: dto.issue_date,
-        expiration_date: dto.expiration_date,
-        credential_id: dto.credential_id,
-        credential_url: dto.credential_url,
-        image_url: dto.image_url,
-      },
+      }
     });
   }
+
 // tiếp tục cái kinh nghiệm là xong những cái chung:
  async getExperienceUser(user_id: string) {
     const result = await this.prisma.experiences.findMany({ 
@@ -196,35 +216,47 @@ export class ProfileService {
   }
 
   // delete experience của user
-  async deleteExperience(id: string) {
+  async deleteExperience(id: string,user_id?:string) {
+    if(user_id){
+      if(await this.prisma.experiences.findFirst({where:{user_id}})){
+         return await this.prisma.experiences.delete({ 
+      where: { id } 
+    });
+      }else{
+        throw new ForbiddenException("Youre not have permission");
+      }
+    }
     return await this.prisma.experiences.delete({ 
       where: { id } 
     });
   }
 
-  // Upsert Experience
   async upsertExperienceUser(user_id: string, dto: UpsertExperienceDto) {
-    // Kiểm tra quyền sở hữu nếu là update
     if (dto.id) {
+      // 1. Kiểm tra quyền sở hữu
       const existingExp = await this.prisma.experiences.findFirst({
         where: { id: dto.id, user_id }
       });
+      
       if (!existingExp) {
         throw new NotFoundException('Experience not found or does not belong to user');
       }
-    }
 
-    return await this.prisma.experiences.upsert({
-      where: { id: dto.id || '' },
-      update: {
-        company_name: dto.company_name,
-        position: dto.position,
-        start_date: new Date(dto.start_date),
-        end_date: dto.end_date ? new Date(dto.end_date) : null,
-        description: dto.description,
-      },
-      create: {
-        user_id,
+      // 2. Dùng lệnh update
+      return await this.prisma.experiences.update({
+        where: { id: dto.id },
+        data: {
+          company_name: dto.company_name,
+          position: dto.position,
+          start_date: new Date(dto.start_date),
+          end_date: dto.end_date ? new Date(dto.end_date) : null,
+          description: dto.description,
+        },
+      });
+    }
+    return await this.prisma.experiences.create({
+      data: {
+        user_id, // Nhớ luôn có user_id khi create
         company_name: dto.company_name,
         position: dto.position,
         start_date: new Date(dto.start_date),
@@ -233,4 +265,5 @@ export class ProfileService {
       },
     });
   }
+
 }
