@@ -195,7 +195,12 @@ export class TechnologyService {
     });
     return res;
   }
-
+  // Lấy chi tiết 1 tech stack
+  async getTechStackDetail(id: string) {
+    return await this.prisma.tech_stack.findFirstOrThrow({
+      where: { id }
+    });
+  }
   
   // create các thứ thì bình thường, 
 

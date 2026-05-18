@@ -163,6 +163,71 @@ async updateTechStack(createTechStack:CreateTechStackDto,
     const result = await this.technologyService.updateTechStack(id,createTechStack);
     return result;
 }
+
+  @Post('project/:projectId/techStack/:techStackId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  async addTechStack(
+    @Param('projectId') projectId: string,
+    @Param('techStackId') techStackId: string,
+    @Req() req
+  ) {
+    const { userId } = req.user;
+    return this.technologyService.addTechStack(userId, techStackId, projectId);
+  }
+
+  @Delete('project/:projectId/techStack/:techStackId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  async removeTechStackFromProject(
+    @Param('projectId') projectId: string,
+    @Param('techStackId') techStackId: string,
+    @Req() req
+  ) {
+    const { userId } = req.user;
+    return this.technologyService.removeTechStackFromProject(userId, techStackId, projectId);
+  }
+
+  @Post('manage/project/:projectId/techStack/:techStackId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @HttpCode(200)
+  async addTechStackAdmin(
+    @Param('projectId') projectId: string,
+    @Param('techStackId') techStackId: string,
+  ) {
+    return this.technologyService.addTechStack(undefined, techStackId, projectId);
+  }
+
+  @Delete('manage/project/:projectId/techStack/:techStackId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @HttpCode(200)
+  async removeTechStackFromProjectAdmin(
+    @Param('projectId') projectId: string,
+    @Param('techStackId') techStackId: string,
+  ) {
+    return this.technologyService.removeTechStackFromProject(undefined, techStackId, projectId);
+  }
+
+  // --- API Public Lấy danh sách TechStack ---
+  @Get('techStack')
+  @HttpCode(200)
+  async getAllStack() {
+    return this.technologyService.getAllStack();
+  }
+
+  // --- API Public Lấy chi tiết 1 TechStack ---
+  @Get('techStack/:id')
+  @HttpCode(200)
+  async getTechStackDetail(@Param('id') id: string) {
+    return this.technologyService.getTechStackDetail(id);
+  }
+
 // làm xong phần của tech, check lại phần project, hình như có logic bị lặp ở chỗ đó.
 // 1 là các logic check sự tồn tại đang bị lấy 1 trường, đây là lỗ hổng trong code.
 // 2 là các logic bị lặp.
