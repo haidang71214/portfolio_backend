@@ -136,22 +136,20 @@ export class TechnologyService {
 
   async updateTechStack(techStackId:string, data:UpdateTechStackDto){
     const checkStack = await this.prisma.tech_stack.findFirstOrThrow({where:{id:techStackId}});
-    
-    // Nếu có gửi lên icon_url mới và nó khác với icon_url hiện tại
     if (data.icon_url && data.icon_url !== checkStack.icon_url) {
-      // Xoá ảnh cũ trên Cloudinary (nếu có)
       if (checkStack.icon_url) {
         await this.cloudynaryService.deleteImage(checkStack.icon_url);
       }
     }
 
-    const {...result} = data;
-    delete result.image; // Xoá trường image (file) khỏi data đưa vào Prisma vì database không có cột này
-    
+    const {...result} = data
+    delete result.image
     const res = await this.prisma.tech_stack.update({where:{id:techStackId},data: result})
     return res;
   }
-  //check user_id ở đây, làm cho cả admin nữa.
+
+  
+   //check user_id ở đây, làm cho cả admin nữa.
   async addTechStack(user_id: string | undefined, id:string, project_id:string){
     if (user_id) {
       await this.prisma.projects.findFirstOrThrow({ where: { id: project_id, user_id } });
@@ -183,24 +181,28 @@ export class TechnologyService {
     });
     return res;
   }
+
 // để public.
+ // để public.
   async getAllStack(){
     const res = await this.prisma.tech_stack.findMany({
       where: {
-        is_active: true
+        is_active: true // Chỉ lấy những tech stack đang active
       },
       orderBy: {
-        name: 'asc'
+        name: 'asc' // Mặc định sắp xếp theo bảng chữ cái cho đẹp
       }
     });
     return res;
   }
+
   // Lấy chi tiết 1 tech stack
   async getTechStackDetail(id: string) {
     return await this.prisma.tech_stack.findFirstOrThrow({
       where: { id }
     });
   }
+
   
   // create các thứ thì bình thường, 
 

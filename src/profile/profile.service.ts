@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
@@ -33,7 +33,11 @@ export class ProfileService {
   // --- PORTFOLIO MANAGEMENT --- //
 
   // Dùng chung cho cả User tự update và Admin update dùm User
-  async upsertPortfolio(userId: string, updateDto: UpdatePortfolioDto) {
+  async upsertPortfolio(userId: string | undefined, updateDto: UpdatePortfolioDto) {
+    if (!userId) {
+      throw new BadRequestException("User ID is required to update or create a portfolio");
+    }
+
     // Nếu có truyền theme_id, kiểm tra xem theme đó có hợp lệ không
     if (updateDto.theme_id) {
       const templateCheck = await this.prisma.theme_templates.findUnique({ where: { id: updateDto.theme_id } });
@@ -43,22 +47,32 @@ export class ProfileService {
     }
     const defaultThemeId = updateDto.theme_id || "default-theme-id"; 
 
-    const result = await this.prisma.user_portfolios.upsert({
-      where: { user_id: userId },
-      update: {
-        theme_id: updateDto.theme_id,
-        title: updateDto.title,
-        bio: updateDto.bio,
-        ...(updateDto.custom_config !== undefined && { custom_config: updateDto.custom_config })
-      },
-      create: {
-        user_id: userId,
-        theme_id: defaultThemeId, 
-        title: updateDto.title,
-        bio: updateDto.bio,
-        ...(updateDto.custom_config !== undefined && { custom_config: updateDto.custom_config })
-      }
+    const existingPortfolio = await this.prisma.user_portfolios.findUnique({
+      where: { user_id: userId }
     });
+
+    let result;
+    if (existingPortfolio) {
+      result = await this.prisma.user_portfolios.update({
+        where: { user_id: userId },
+        data: {
+          theme_id: updateDto.theme_id,
+          title: updateDto.title,
+          bio: updateDto.bio,
+          ...(updateDto.custom_config !== undefined && { custom_config: updateDto.custom_config })
+        }
+      });
+    } else {
+      result = await this.prisma.user_portfolios.create({
+        data: {
+          user_id: userId,
+          theme_id: defaultThemeId, 
+          title: updateDto.title,
+          bio: updateDto.bio,
+          ...(updateDto.custom_config !== undefined && { custom_config: updateDto.custom_config })
+        }
+      });
+    }
 
     return result;
   }
@@ -68,16 +82,30 @@ export class ProfileService {
   }
 
   // Giữ lại hàm cũ của bạn nếu vẫn muốn dùng riêng
-  async changeTheme(userId: string, newThemeId: string) {
+  async changeTheme(userId: string | undefined, newThemeId: string) {
+    if (!userId) {
+      throw new BadRequestException("User ID is required to change theme");
+    }
+
     const templateCheck = await this.prisma.theme_templates.findUnique({ where: { id: newThemeId } });
     if (!templateCheck || !templateCheck.is_active) {
       throw new NotFoundException("Not found template or template active yet");
     }
-    const result = await this.prisma.user_portfolios.upsert({
-      where: { user_id: userId },
-      update: { theme_id: newThemeId },
-      create: { user_id: userId, theme_id: newThemeId }
+    const existingPortfolio = await this.prisma.user_portfolios.findUnique({
+      where: { user_id: userId }
     });
+
+    let result;
+    if (existingPortfolio) {
+      result = await this.prisma.user_portfolios.update({
+        where: { user_id: userId },
+        data: { theme_id: newThemeId }
+      });
+    } else {
+      result = await this.prisma.user_portfolios.create({
+        data: { user_id: userId, theme_id: newThemeId }
+      });
+    }
     return result;
   }
   
@@ -100,24 +128,35 @@ export class ProfileService {
     return result
   }
 // update detail của cái skill đó.
-  async upsertSkillUser(user_id: string, dto: UpsertSkillDto,id:string) {
+  async upsertSkillUser(user_id: string | undefined, dto: UpsertSkillDto, id: string) {
     if (id) {
-      const existingSkill = await this.prisma.skills.findFirst({
-        where: {id, user_id }
-      });
-      if (!existingSkill) {
-        throw new NotFoundException('Skill not found or does not belong to user');
+      if (user_id) {
+        const existingSkill = await this.prisma.skills.findFirst({
+          where: { id, user_id }
+        });
+        if (!existingSkill) {
+          throw new NotFoundException('Skill not found or does not belong to user');
+        }
+      } else {
+        await this.prisma.skills.findFirstOrThrow({ where: { id } });
       }
+
+      return await this.prisma.skills.update({
+        where: { id },
+        data: {
+          name: dto.name,
+          level: dto.level,
+          category: dto.category
+        }
+      });
     }
 
-    return await this.prisma.skills.upsert({
-      where: { id },
-      update: {
-        name: dto.name,
-        level: dto.level,
-        category: dto.category
-      },
-      create: {
+    if (!user_id) {
+      throw new BadRequestException('user_id is required to create a skill');
+    }
+
+    return await this.prisma.skills.create({
+      data: {
         user_id,
         name: dto.name,
         level: dto.level,
@@ -156,17 +195,21 @@ export class ProfileService {
   }
 // vấn đề là đây có 2 cái id nữa.
 // có id khi update, không có khi create
-  async upsertCertificateUser(user_id: string, dto: UpsertCertificateDto) { // Bỏ cái id?:string ở cuối đi vì đã có dto.id
+  async upsertCertificateUser(user_id: string | undefined, dto: UpsertCertificateDto) { // Bỏ cái id?:string ở cuối đi vì đã có dto.id
     
     // TRƯỜNG HỢP 1: CÓ ID -> UPDATE
     if (dto.id) {
-      // 1. Kiểm tra xem chứng chỉ có tồn tại và thuộc về user này không
-      const existingCert = await this.prisma.certificates.findFirst({
-        where: { id: dto.id, user_id }
-      });
-      
-      if (!existingCert) {
-        throw new NotFoundException('Certificate not found or does not belong to user');
+      if (user_id) {
+        // 1. Kiểm tra xem chứng chỉ có tồn tại và thuộc về user này không
+        const existingCert = await this.prisma.certificates.findFirst({
+          where: { id: dto.id, user_id }
+        });
+        
+        if (!existingCert) {
+          throw new NotFoundException('Certificate not found or does not belong to user');
+        }
+      } else {
+        await this.prisma.certificates.findFirstOrThrow({ where: { id: dto.id } });
       }
 
       // 2. Dùng lệnh update thẳng luôn
@@ -185,6 +228,10 @@ export class ProfileService {
     }
 
     // TRƯỜNG HỢP 2: KHÔNG CÓ ID -> CREATE
+    if (!user_id) {
+      throw new BadRequestException('user_id is required to create a certificate');
+    }
+
     return await this.prisma.certificates.create({
       data: {
         user_id, // Nhớ gán user_id vào nhé
@@ -231,15 +278,19 @@ export class ProfileService {
     });
   }
 
-  async upsertExperienceUser(user_id: string, dto: UpsertExperienceDto) {
+  async upsertExperienceUser(user_id: string | undefined, dto: UpsertExperienceDto) {
     if (dto.id) {
-      // 1. Kiểm tra quyền sở hữu
-      const existingExp = await this.prisma.experiences.findFirst({
-        where: { id: dto.id, user_id }
-      });
-      
-      if (!existingExp) {
-        throw new NotFoundException('Experience not found or does not belong to user');
+      if (user_id) {
+        // 1. Kiểm tra quyền sở hữu
+        const existingExp = await this.prisma.experiences.findFirst({
+          where: { id: dto.id, user_id }
+        });
+        
+        if (!existingExp) {
+          throw new NotFoundException('Experience not found or does not belong to user');
+        }
+      } else {
+        await this.prisma.experiences.findFirstOrThrow({ where: { id: dto.id } });
       }
 
       // 2. Dùng lệnh update
@@ -254,6 +305,11 @@ export class ProfileService {
         },
       });
     }
+
+    if (!user_id) {
+      throw new BadRequestException('user_id is required to create an experience');
+    }
+
     return await this.prisma.experiences.create({
       data: {
         user_id, // Nhớ luôn có user_id khi create
