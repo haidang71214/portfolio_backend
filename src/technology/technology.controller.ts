@@ -9,6 +9,7 @@ import { CloudUploadService } from '../shared/cloudinary.service';
 import { RolesGuard } from '../auth/stratergy/role.guard';
 import { Roles } from '../auth/decorator/role.decorator';
 import { createAndUpdateImages } from './dto/create-technology.dto';
+import { CreateTechStackDto } from './dto/createTechStack';
 
 @Controller('technology')
 export class TechnologyController {
@@ -90,7 +91,8 @@ export class TechnologyController {
   @UseGuards(JwtAuthGuard,RolesGuard)
   @Roles('admin')
   @UseInterceptors(FileInterceptor('image'))
-  async adminUpdate(@Param('projectId') id: string,
+  async adminUpdate(
+  @Param('projectId') id: string,
   @Body() updateTechnologyDto: createAndUpdateImages,
   @UploadedFile() file:  Express.Multer.File
   
@@ -126,8 +128,41 @@ export class TechnologyController {
     return this.technologyService.remove(undefined,id);
   }
 
-
 // hết images sẽ đến techStack
+@Post('manage/techStack')
+@UseGuards(JwtAuthGuard,RolesGuard)
+@Roles('admin')
+@ApiBearerAuth()
+@HttpCode(200)
+@UseInterceptors(FileInterceptor('image'))
+async createTechStack(createTechStack:CreateTechStackDto,
+  @UploadedFile() file:  Express.Multer.File
+){
+   if(file){
+      const res_images = await this.cloudynaryService.uploadImage(file,"image");
+      createTechStack.icon_url =  (await res_images).secure_url;
+    }
+    const result = await this.technologyService.createTechStack(createTechStack);
+    return result;
+}
+@Patch('manage/techStack/:id')
+@UseGuards(JwtAuthGuard,RolesGuard)
+@Roles('admin')
+@ApiBearerAuth()
+@HttpCode(200)
+@UseInterceptors(FileInterceptor('image'))
+async updateTechStack(createTechStack:CreateTechStackDto,
+  @UploadedFile() file:  Express.Multer.File,
+  @Param('id') id:string
+){
+   if(file){
+      const res_images = await this.cloudynaryService.uploadImage(file,"image");
+      createTechStack.icon_url =  res_images.secure_url;
+      
+    }
+    const result = await this.technologyService.updateTechStack(id,createTechStack);
+    return result;
+}
 // làm xong phần của tech, check lại phần project, hình như có logic bị lặp ở chỗ đó.
 // 1 là các logic check sự tồn tại đang bị lấy 1 trường, đây là lỗ hổng trong code.
 // 2 là các logic bị lặp.
